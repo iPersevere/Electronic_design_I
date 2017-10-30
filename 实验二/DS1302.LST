@@ -1,0 +1,119 @@
+C51 COMPILER V9.01   DS1302                                                                12/08/2016 14:28:15 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE DS1302
+OBJECT MODULE PLACED IN DS1302.OBJ
+COMPILER INVOKED BY: D:\keil 4\C51\BIN\C51.EXE DS1302.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include<ds1302.h>
+   2          #include <AT89X52.H>
+   3          uchar code READ_RTC_ADDR[7] = {0x81, 0x83, 0x85, 0x87, 0x89, 0x8b, 0x8d}; 
+   4          uchar code WRITE_RTC_ADDR[7] = {0x80, 0x82, 0x84, 0x86, 0x88, 0x8a, 0x8c};
+   5          uchar TIME[7] = {0, 0, 0x12, 0x07, 0x05, 0x06, 0x16};   //存储顺序是秒分时日月周年,存储格式是用BCD码
+   6                                                                                                                      //2016年5月7日星期六12点00分00秒
+   7          void Ds1302Write(uchar addr, uchar dat)         //向DS1302命令（地址+数据）
+   8          {
+   9   1              uchar n;
+  10   1              RST = 0;
+  11   1              _nop_();
+  12   1              SCLK = 0;//先将SCLK置低电平。
+  13   1              _nop_();
+  14   1              RST = 1; //然后将RST(CE)置高电平。
+  15   1              _nop_();
+  16   1              for (n=0; n<8; n++)//开始传送八位地址命令
+  17   1              {
+  18   2                      DSIO = addr & 0x01;//数据从低位开始传送
+  19   2                      addr >>= 1;
+  20   2                      SCLK = 1;//数据在上升沿时，DS1302读取数据
+  21   2                      _nop_();
+  22   2                      SCLK = 0;
+  23   2                      _nop_();
+  24   2              }
+  25   1              for (n=0; n<8; n++)//写入8位数据
+  26   1              {
+  27   2                      DSIO = dat & 0x01;
+  28   2                      dat >>= 1;
+  29   2                      SCLK = 1;//数据在上升沿时，DS1302读取数据
+  30   2                      _nop_();
+  31   2                      SCLK = 0;
+  32   2                      _nop_();        
+  33   2              }                        
+  34   1              RST = 0;//传送数据结束
+  35   1              _nop_();
+  36   1      }
+  37          uchar Ds1302Read(uchar addr)      //读取一个地址的数据
+  38          {
+  39   1              uchar n,dat,dat1;
+  40   1              RST = 0;
+  41   1              _nop_();
+  42   1              SCLK = 0;//先将SCLK置低电平。
+  43   1              _nop_();
+  44   1              RST = 1;//然后将RST(CE)置高电平。
+  45   1              _nop_();
+  46   1              for(n=0; n<8; n++)//开始传送八位地址命令
+  47   1              {
+  48   2                      DSIO = addr & 0x01;//数据从低位开始传送
+  49   2                      addr >>= 1;
+  50   2                      SCLK = 1;//数据在上升沿时，DS1302读取数据
+  51   2                      _nop_();
+  52   2                      SCLK = 0;//DS1302下降沿时，放置数据
+  53   2                      _nop_();
+  54   2              }
+  55   1              _nop_();
+C51 COMPILER V9.01   DS1302                                                                12/08/2016 14:28:15 PAGE 2   
+
+  56   1              for(n=0; n<8; n++)//读取8位数据
+  57   1              {
+  58   2                      dat1 = DSIO;//从最低位开始接收
+  59   2                      dat = (dat>>1) | (dat1<<7);
+  60   2                      SCLK = 1;
+  61   2                      _nop_();
+  62   2                      SCLK = 0;//DS1302下降沿时，放置数据
+  63   2                      _nop_();
+  64   2              }
+  65   1              RST = 0;
+  66   1              _nop_();        //以下为DS1302复位的稳定时间,必须的。
+  67   1              SCLK = 1;
+  68   1              _nop_();
+  69   1              DSIO = 0;
+  70   1              _nop_();
+  71   1              DSIO = 1;
+  72   1              _nop_();
+  73   1              return dat;     
+  74   1      }
+  75          void Ds1302Init()                       //初始化DS1302.
+  76          {
+  77   1              uchar n;
+  78   1              Ds1302Write(0x8E,0X00);          //禁止写保护，就是关闭写保护功能
+  79   1              for (n=0; n<7; n++)//写入7个字节的时钟信号：分秒时日月周年
+  80   1              {
+  81   2                      Ds1302Write(WRITE_RTC_ADDR[n],TIME[n]); 
+  82   2              }
+  83   1              Ds1302Write(0x8E,0x80);          //打开写保护功能
+  84   1      }
+  85          void Ds1302ReadTime()              //读取时钟信息
+  86          {
+  87   1              uchar n;
+  88   1              for (n=0; n<7; n++)//读取7个字节的时钟信号：分秒时日月周年
+  89   1              {
+  90   2                      TIME[n] = Ds1302Read(READ_RTC_ADDR[n]);
+  91   2              }               
+  92   1      }
+  93          
+  94          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    184    ----
+   CONSTANT SIZE    =     14    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      7    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

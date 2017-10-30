@@ -1,0 +1,189 @@
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 13:55:59 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\keil 4\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          //#include <reg52.h>                     
+   2          #include <REGX52.H>
+   3          
+   4          typedef unsigned int u16;         
+   5          typedef unsigned char u8;
+   6          
+   7          u8 code smgwei0[]={0x7f,0xbf,0xdf,0xef,0xf7,0xfb,0xfd,0xfe,0xff};
+   8          u8 code smgduan0[17]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07};//显示0~7的值
+   9                                                  
+  10          u8 code smgwei1[]={0xfe,0xfd,0xfb,0xf7,0xef,0xdf,0xbf,0x7f,0xff};
+  11          u8 code smgduan1[]={0x07,0x7d,0x6d,0x66,0x4f,0x5b,0x06,0x3f};//显示0~7的值
+  12          
+  13          u16 code copy[]={0xff,0x7f,0x3f,0x1f,0x0f,0x07,0x03,0x01}; 
+  14          u8 i,j,k,t;
+  15          bit ldelay=0;
+  16          void delay(u16 i)       //延时函数，一个1相当于10us
+  17          {
+  18   1              while(i--);     
+  19   1      }
+  20          void Display1()
+  21          {
+  22   1          EA=1;
+  23   1              EX0=1;
+  24   1              IT0=1;
+  25   1      }
+  26          void Int0()interrupt 0
+  27          {
+  28   1          P0=0xff;
+  29   1          P2=0xff;
+  30   1              delay(10000);
+  31   1          for(i=0;i<=8;i++)
+  32   1              {
+  33   2                      P0=smgwei1[i];
+  34   2                      if(i!=8)
+  35   2                      delay(10000); //间隔一段时间扫描        
+  36   2              }
+  37   1      
+  38   1              for(i=0;i<=8;i++)
+  39   1              {
+  40   2                      P2=smgwei1[i];
+  41   2                      if(i!=8)
+  42   2                      delay(10000); //间隔一段时间扫描        
+  43   2              }
+  44   1              for(i=0;i<=8;i++)
+  45   1              {
+  46   2                      P2=smgwei0[i];
+  47   2                      if(i!=8)
+  48   2                      delay(10000); //间隔一段时间扫描        
+  49   2              }
+  50   1              for(i=0;i<=8;i++)
+  51   1              {
+  52   2                      P0=smgwei0[i];
+  53   2                      if(i!=8)
+  54   2                      delay(10000); //间隔一段时间扫描        
+  55   2              }
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 13:55:59 PAGE 2   
+
+  56   1      
+  57   1          P0=0xff;
+  58   1          P2=0xff;
+  59   1              delay(10000);
+  60   1          for(i=0;i<8;i++)
+  61   1              {
+  62   2                  P2=smgwei0[i];
+  63   2                      P0=smgwei1[i];          
+  64   2                      if(i!=8)
+  65   2                      delay(10000); //间隔一段时间扫描        
+  66   2              }
+  67   1              for(i=0;i<8;i++)
+  68   1              {
+  69   2                  P2=smgwei1[i];
+  70   2                      P0=smgwei0[i];          
+  71   2                      if(i!=8)
+  72   2                      delay(10000); //间隔一段时间扫描        
+  73   2              }
+  74   1      }
+  75          void Display2()
+  76          {
+  77   1          EA=1;
+  78   1              EX1=1;
+  79   1              IT1=1;
+  80   1      }
+  81          void Int1()interrupt 2
+  82          {    
+  83   1           u8 m=8,n=8;
+  84   1               i=0;
+  85   1               P0=0xff;
+  86   1           P2=0xff;
+  87   1               delay(10000);
+  88   1               while(i<8)
+  89   1               {          
+  90   2                  u16 temp=0xfe&copy[i];
+  91   2                      for(k=0;k<=8;k++)
+  92   2                  {
+  93   3                          P0=smgwei1[k];
+  94   3                          if(k!=8)
+  95   3                          delay(10000); //间隔一段时间扫描    
+  96   3                  }
+  97   2              for(j=0;j<m;j++)
+  98   2              {
+  99   3                          
+ 100   3                          P2=temp;
+ 101   3                  temp=((temp<<1)|0x01)&copy[i];
+ 102   3                      delay(10000);                           
+ 103   3              }
+ 104   2              m--;
+ 105   2                  i++;
+ 106   2          }
+ 107   1              P2=0;
+ 108   1              i=0;
+ 109   1              while(i<8)
+ 110   1          {
+ 111   2                  u16 temp=0xfe&copy[i];
+ 112   2              for(j=0;j<n;j++)
+ 113   2              {
+ 114   3                          P0=temp;
+ 115   3                  temp=((temp<<1)|0x01)&copy[i];
+ 116   3                      delay(10000);                           
+ 117   3              }
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 13:55:59 PAGE 3   
+
+ 118   2              n--;
+ 119   2                  i++;
+ 120   2          }
+ 121   1      }
+ 122          void timer0()interrupt 1
+ 123          {
+ 124   1          TH0=(65536-50000)/256;
+ 125   1              TL0=(65536-50000)%256;
+ 126   1              t++;
+ 127   1              if(t==5)
+ 128   1              {
+ 129   2                 t=0;
+ 130   2                 ldelay=1;
+ 131   2              }
+ 132   1      }
+ 133          void main()
+ 134          {
+ 135   1          TMOD=0x01;
+ 136   1              TH0=(65536-50000)/256;
+ 137   1              TL0=(65536-50000)%256;
+ 138   1              EA=1;
+ 139   1              TR0=1;
+ 140   1              ET0=1;
+ 141   1              IP=0x05;
+ 142   1              while(1)
+ 143   1              {
+ 144   2                  if(ldelay)
+ 145   2                      {
+ 146   3                          ldelay=0; 
+ 147   3                              P2=smgwei0[i];
+ 148   3                          P0=smgduan0[i];//发送段码
+ 149   3                              i++;
+ 150   3                              if(i>=8)
+ 151   3                              {
+ 152   4                                 P2=smgwei1[i-8];
+ 153   4                             P0=smgduan1[i-8];//发送段码
+ 154   4                              }
+ 155   3                              if(i==16)i=0;
+ 156   3      
+ 157   3                      }
+ 158   2                      Display1();        //LED流水灯显示,LED左右同时显示
+ 159   2                  Display2();    //LED加法灯显示
+ 160   2              }               
+ 161   1      }
+ 162          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    612    ----
+   CONSTANT SIZE    =     59    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      4       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

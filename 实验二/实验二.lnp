@@ -1,0 +1,5 @@
+"DS18B20.obj",
+"DS1302.obj",
+"main.obj" 
+TO "สตั้ถþ" 
+RAMSIZE(256) 

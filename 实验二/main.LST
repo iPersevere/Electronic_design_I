@@ -1,0 +1,356 @@
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\keil 4\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include<DS18B20.h>
+   2          #include<ds1302.h>
+   3          #include <AT89X52.H>
+   4          
+   5          typedef unsigned int u16;         //对数据类型进行声明定义
+   6          typedef unsigned char u8;
+   7          
+   8          u8 READ[7] = {0x81, 0x83, 0x85, 0x87, 0x89, 0x8b, 0x8d}; 
+   9          u8 WRITE[7] = {0x80, 0x82, 0x84, 0x86, 0x88, 0x8a, 0x8c};
+  10          
+  11          sbit LSA=P2^0;
+  12          sbit LSB=P2^1;
+  13          sbit LSC=P2^2;
+  14          sbit LSD=P2^3;
+  15          sbit LSE=P2^4;
+  16          sbit LSF=P2^5;
+  17          sbit LSG=P2^6;
+  18          sbit LSH=P2^7;
+  19          sbit k1=P3^2; 
+  20          sbit k2=P3^3; 
+  21          sbit k3=P3^4; 
+  22          sbit k4=P3^5; 
+  23          sbit beep=P1^4;
+  24          
+  25          u16 hour,minute,second; 
+  26          u16 i,a,temp;  
+  27          u8 F_k1=0,F_k2=0;
+  28          u8 ahour=12,aminute=0,asecond=20; 
+  29          
+  30          char num=0;
+  31          u8 DisplayData[8];
+  32          u8 code smgduan[10]={0x3f,0x06,0x5b,0x4f,0x66,0x6d,0x7d,0x07,0x7f,0x6f};
+  33          
+  34          void delay(u16 i)       //延时函数，i=1时，大约延时10us
+  35          {
+  36   1              while(i--);     
+  37   1      }
+  38          void datapros0()         //时间读取处理转换函数
+  39          {
+  40   1              Ds1302ReadTime();       
+  41   1              DisplayData[2] = smgduan[TIME[2]/16];                           //时
+  42   1              DisplayData[3] = smgduan[TIME[2]&0x0f]|0x80;                             
+  43   1              DisplayData[4] = smgduan[TIME[1]/16];                           //分
+  44   1              DisplayData[5] = smgduan[TIME[1]&0x0f]|0x80;    
+  45   1              DisplayData[6] = smgduan[TIME[0]/16];                           //秒
+  46   1              DisplayData[7] = smgduan[TIME[0]&0x0f];
+  47   1              hour=TIME[2];
+  48   1              minute=TIME[1];
+  49   1              second=TIME[0]; 
+  50   1      }
+  51          void datapros1(u16 temp)        //温度读取处理转换函数
+  52          {
+  53   1              float tp;  
+  54   1              if(temp< 0)                             //当温度值为负数,因为读取的温度是实际温度的补码，所以减1，再取反求出原码
+  55   1              {
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 2   
+
+  56   2                      temp=temp-1;
+  57   2                      temp=~temp;
+  58   2                      tp=temp;                   //因为数据处理有小数点所以将温度赋给一个浮点型变量
+  59   2                      temp=tp*0.0625+0.5;     //+0.5是四舍五入
+  60   2              }
+  61   1              else                               //当温度是正的，那么正数的原码就是补码它本身
+  62   1              {                       
+  63   2                      tp=temp;
+  64   2                      temp=tp*0.0625+0.5;     
+  65   2              }
+  66   1              if(temp>=25)
+  67   1              {
+  68   2                      beep=1;
+  69   2                      delay(10000000);
+  70   2              }  
+  71   1      
+  72   1              DisplayData[0] = smgduan[temp / 10];
+  73   1              DisplayData[1] = smgduan[temp % 10];    
+  74   1      }
+  75          void DigDisplay()        //数码管显示函数
+  76          {
+  77   1              u8 i;
+  78   1              for(i=0;i<8;i++)
+  79   1              {
+  80   2                      switch(i)        //位选，选择点亮的数码管，
+  81   2                      {
+  82   3                          case(0):
+  83   3                                      LSA=0;LSB=1;LSC=1;LSD=1;LSE=1;LSF=1;LSG=1;LSH=1; break;//显示第0位
+  84   3                              case(1):
+  85   3                                      LSA=1;LSB=0;LSC=1;LSD=1;LSE=1;LSF=1;LSG=1;LSH=1; break;//显示第1位
+  86   3                              case(2):
+  87   3                                      LSA=1;LSB=1;LSC=0; LSD=1;LSE=1;LSF=1;LSG=1;LSH=1;break;//显示第2位
+  88   3                              case(3):
+  89   3                                      LSA=1;LSB=1;LSC=1; LSD=0;LSE=1;LSF=1;LSG=1;LSH=1;break;//显示第3位
+  90   3                              case(4):
+  91   3                                      LSA=1;LSB=1;LSC=1; LSD=1;LSE=0;LSF=1;LSG=1;LSH=1;break;//显示第4位
+  92   3                              case(5):
+  93   3                                      LSA=1;LSB=1;LSC=1; LSD=1;LSE=1;LSF=0;LSG=1;LSH=1;break;//显示第5位
+  94   3                              case(6):
+  95   3                                      LSA=1;LSB=1;LSC=1; LSD=1;LSE=1;LSF=1;LSG=0;LSH=1;break;//显示第6位
+  96   3                              case(7):
+  97   3                                      LSA=1;LSB=1;LSC=1; LSD=1;LSE=1;LSF=1;LSG=1;LSH=0;break;//显示第7位
+  98   3                      }
+  99   2                      if(i==0||i==1)
+ 100   2                      {
+ 101   3                          P0=DisplayData[1-i];//发送数据
+ 102   3                          delay(100); //间隔一段时间扫描      
+ 103   3                          P0=0x00;//消隐
+ 104   3                      }
+ 105   2                      else
+ 106   2                      {
+ 107   3                          P0=DisplayData[9-i];//发送数据
+ 108   3                          delay(100); //间隔一段时间扫描      
+ 109   3                          P0=0x00;//消隐
+ 110   3                      }
+ 111   2              }               
+ 112   1      }
+ 113          void key1()  
+ 114          {    
+ 115   1          if(k1==0)   
+ 116   1          {    
+ 117   2              delay(1);    
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 3   
+
+ 118   2              if(k1==0)     
+ 119   2              {      
+ 120   3                   while(!k1);      
+ 121   3                   F_k1++;      
+ 122   3                   if(F_k1==4)       
+ 123   3                   {        
+ 124   4                       F_k1=0;         
+ 125   4                   }     
+ 126   3              }   
+ 127   2          } 
+ 128   1      }
+ 129          void key2()  
+ 130          {    
+ 131   1          if(k2==0)   
+ 132   1          {    
+ 133   2              delay(1);    
+ 134   2              if(k2==0)     
+ 135   2              {          
+ 136   3                   while(!k2);      
+ 137   3                   F_k2++;      
+ 138   3                   if(F_k2==4)       
+ 139   3                   {        
+ 140   4                       F_k2=0;              
+ 141   4                   }     
+ 142   3              }   
+ 143   2          } 
+ 144   1      }
+ 145          void key3() 
+ 146          {  
+ 147   1          if(k3==0)   
+ 148   1          {   
+ 149   2              delay(1);   
+ 150   2              {    
+ 151   3                  while(!k3);    
+ 152   3                  if(F_k1==1)   
+ 153   3                  {                        
+ 154   4                      second++;    
+ 155   4                      if(second==60)    
+ 156   4                      second=0;
+ 157   4                  }   
+ 158   3                  if(F_k1==2)    
+ 159   3                  {
+ 160   4                      minute++;     
+ 161   4                      if(minute==60)     
+ 162   4                      minute=0;                                      
+ 163   4                  }   
+ 164   3                  if(F_k1==3)    
+ 165   3                  {   
+ 166   4                      hour++; 
+ 167   4                      if(hour==24)     
+ 168   4                      hour=0;
+ 169   4                  }     
+ 170   3                  if(F_k2==1)    
+ 171   3                  {     
+ 172   4                      asecond++;     
+ 173   4                      if(asecond==60)     
+ 174   4                      asecond=0;    
+ 175   4                  }    
+ 176   3                  if(F_k2==2)    
+ 177   3                  {     
+ 178   4                      aminute++;     
+ 179   4                      if(aminute==60)     
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 4   
+
+ 180   4                      aminute=0;    
+ 181   4                  }    
+ 182   3                  if(F_k2==3)    
+ 183   3                  {     
+ 184   4                      ahour++;     
+ 185   4                      if(ahour==24)     
+ 186   4                      ahour=0;    
+ 187   4                  } 
+ 188   3               }  
+ 189   2           } 
+ 190   1      }
+ 191          void key4() 
+ 192          {  
+ 193   1          if(k4==0)   
+ 194   1          {   
+ 195   2              delay(1);   
+ 196   2              {    
+ 197   3                  while(!k4);    
+ 198   3                  if(F_k1==1)   
+ 199   3                  {   
+ 200   4                      second--;    
+ 201   4                      if(second==0)    
+ 202   4                      second=59;      
+ 203   4                  }   
+ 204   3                  if(F_k1==2)    
+ 205   3                  {     
+ 206   4                      minute--;     
+ 207   4                      if(minute==0)     
+ 208   4                      minute=59;       
+ 209   4                  }   
+ 210   3                  if(F_k1==3)    
+ 211   3                  {    
+ 212   4                      hour--; 
+ 213   4                      if(hour==0)     
+ 214   4                      hour=23;    
+ 215   4                  }     
+ 216   3                  if(F_k2==1)    
+ 217   3                  {     
+ 218   4                      asecond--;     
+ 219   4                      if(asecond==0)     
+ 220   4                      asecond=59;    
+ 221   4                  }    
+ 222   3                  if(F_k2==2)    
+ 223   3                  {     
+ 224   4                      aminute--;     
+ 225   4                      if(aminute==0)     
+ 226   4                      aminute=59;    
+ 227   4                  }    
+ 228   3                  if(F_k2==3)    
+ 229   3                  {     
+ 230   4                      ahour--;     
+ 231   4                      if(ahour==0)     
+ 232   4                      ahour=23;    
+ 233   4                  } 
+ 234   3               }  
+ 235   2           } 
+ 236   1      }
+ 237          void main()
+ 238          {
+ 239   1          u16 n;
+ 240   1          Ds1302Init();
+ 241   1          while(1)
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 5   
+
+ 242   1              {  
+ 243   2                  u16 h=0,m=0,s=0;  
+ 244   2                  beep=0;
+ 245   2                  datapros0();         //数据处理函数
+ 246   2                      datapros1(Ds18b20ReadTemp());    //数据处理函数
+ 247   2                      second=(second&0x0f)+(second>>4)*10;  //将秒、分、时的BCD码转化为十进制
+ 248   2                      minute=(minute&0x0f)+(minute>>4)*10;
+ 249   2                      hour=(hour&0x0f)+(hour>>4)*10;
+ 250   2                      key1();
+ 251   2                      key2();
+ 252   2                      key3();
+ 253   2                      key4();
+ 254   2                      second=((second/10)<<4)+(second%10);  //将秒、分、时的十进制转化为BCD码
+ 255   2                      minute=((minute/10)<<4)+(minute%10);
+ 256   2                      hour=((hour/10)<<4)+(hour%10);
+ 257   2                      if(F_k1)
+ 258   2                      {
+ 259   3                          Ds1302Write(0x80,0x80);//使秒寄存器最高位为1，终止计时
+ 260   3                          TIME[2]=hour;
+ 261   3                      TIME[1]=minute;
+ 262   3                      TIME[0]=second;
+ 263   3                      Ds1302Write(0x8E,0X00);          //禁止写保护，就是关闭写保护功能
+ 264   3                      for (n=0; n<7; n++)//写入7个字节的时钟信号：分秒时日月周年
+ 265   3                      {
+ 266   4                              Ds1302Write(WRITE[n],TIME[n]);  
+ 267   4                      }
+ 268   3                      Ds1302Write(0x8E,0x80);          //打开写保护功能
+ 269   3                          for (n=0; n<7; n++)//读取7个字节的时钟信号：分秒时日月周年
+ 270   3                      {
+ 271   4                              TIME[n] = Ds1302Read(READ[n]);
+ 272   4                      } 
+ 273   3                          hour=TIME[2];
+ 274   3                      minute=TIME[1];
+ 275   3                      second=TIME[0];
+ 276   3                      }
+ 277   2                      if(asecond>=0&&asecond<=9){if(second==asecond)s=1;}
+ 278   2                      if(asecond>=10&&asecond<=19){if(second==asecond+6)s=1;}
+ 279   2                      if(asecond>=20&&asecond<=29){if(second==asecond+12)s=1;}
+ 280   2                      if(asecond>=30&&asecond<=39){if(second==asecond+18)s=1;}
+ 281   2                      if(asecond>=40&&asecond<=49){if(second==asecond+24)s=1;}
+ 282   2                      if(asecond>=50&&asecond<=59){if(second==asecond+30)s=1;}
+ 283   2                      /*if(aminute>=0&&aminute<=9){if(aminute==aminute)m=1;}
+ 284   2                      if(aminute>=10&&aminute<=19){if(aminute==aminute+6)m=1;}
+ 285   2                      if(aminute>=20&&aminute<=29){if(aminute==aminute+12)m=1;}
+ 286   2                      if(aminute>=30&&aminute<=39){if(aminute==aminute+18)m=1;}
+ 287   2                      if(aminute>=40&&aminute<=49){if(aminute==aminute+24)m=1;}
+ 288   2                      if(aminute>=50&&aminute<=59){if(aminute==aminute+30)m=1;}
+ 289   2                      if(ahour>=0&&ahour<=9){if(ahour==ahour)h=1;}
+ 290   2                      if(ahour>=10&&ahour<=19){if(ahour==ahour+6)h=1;}
+ 291   2                      if(ahour>=20&&ahour<=24){if(ahour==ahour+12)h=1;}
+ 292   2                      if(s==1&&m==1&&h==1)
+ 293   2                      {
+ 294   2                          beep=1;
+ 295   2                              delay(10000000);
+ 296   2                      }  */
+ 297   2                      if(s)    //蜂鸣器响应函数
+ 298   2                      {
+ 299   3                          beep=1;
+ 300   3                              delay(10000000);
+ 301   3                      }  
+ 302   2                      if(F_k1)        //时间调整时显示时间
+ 303   2                      {
+C51 COMPILER V9.01   MAIN                                                                  12/08/2016 14:28:15 PAGE 6   
+
+ 304   3                         DisplayData[2] = smgduan[hour/16];                           //时
+ 305   3                     DisplayData[3] = smgduan[hour&0x0f]|0x80;                                 
+ 306   3                     DisplayData[4] = smgduan[minute/16];                             //分
+ 307   3                     DisplayData[5] = smgduan[minute&0x0f]|0x80;      
+ 308   3                     DisplayData[6] = smgduan[second/16];                             //秒
+ 309   3                     DisplayData[7] = smgduan[second&0x0f];
+ 310   3                      }                                               
+ 311   2                      if(F_k2)        //定时调整时显示定时
+ 312   2                      {
+ 313   3      
+ 314   3                         DisplayData[2] = smgduan[ahour/10];                          //时
+ 315   3                     DisplayData[3] = smgduan[ahour%10]|0x80;                          
+ 316   3                     DisplayData[4] = smgduan[aminute/10];                    //分
+ 317   3                     DisplayData[5] = smgduan[aminute%10]|0x80;       
+ 318   3                     DisplayData[6] = smgduan[asecond/10];                    //秒
+ 319   3                     DisplayData[7] = smgduan[asecond%10];               
+ 320   3                      } 
+ 321   2                      DigDisplay();//数码管显示函数
+ 322   2              }
+ 323   1      }        
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1549    ----
+   CONSTANT SIZE    =     10    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     40      12
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
